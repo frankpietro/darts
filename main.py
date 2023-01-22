@@ -57,17 +57,10 @@ if __name__ == '__main__':
                     keep_throwing = True
                     while keep_throwing:
                         print(f"Aim: {aim}")
-                        correct_turn = False
-                        while not correct_turn:
-                            turn = TrainingTurn(aim=aim)
-                            print("Insert throws (<number><code>, code: a,b,c,d from outer to inner circle)")
-                            for i in range(c.N_DARTS):
-                                dart_code = ui.ask_for_dart_code()
-                                dart = Dart(dart_code)
-                                turn.add_dart(dart)
-                            
-                            print(turn)
-                            correct_turn = ui.ask_for_confirmation("Is this turn correct? (Y/n): ")
+
+                        turn = TrainingTurn(aim)
+                        
+                        turn = m.get_turn(turn)
 
                         training_session.add_turn(turn)
 
@@ -91,20 +84,10 @@ if __name__ == '__main__':
                 n_players_per_team = ui.ask_for_n_players_per_team()
 
                 if n_players_per_team == 1:
-                    player1_name = ui.ask_for_name()
-                    player1_id = s.search_player(player1_name, conn)
-                    if not player1_id:
-                        print(f"Player {player1_name} not found")
-                        if ui.ask_for_confirmation("Do you want to register him? (Y/n): "):
-                            player1_id = s.add_player(player1_name, conn)
-                            print(f"Player {player1_name} successfully registered with id {player1_id}")
-                        else:
-                            print("Registration aborted")
+                    player1 = m.get_player(conn)
+                    player2 = m.get_player(conn)
 
-                    else:
-                        print(f"Player {player1_name} found with id {player1_id}")
-                    
-                    player1 = Player(player1_id, player1_name)
+                    match.
                             
 
 
