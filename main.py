@@ -118,7 +118,9 @@ if __name__ == '__main__':
                 set_order = 0
                 while keep_adding_sets:
                     set_order += 1
-                    new_set = Set(set_order=set_order)
+                    set = Set(set_order=set_order)
+
+                    set.set_id(s.insert_set(set, match.id, conn))
 
                     keep_adding_legs = True
                     leg_order = 0
@@ -159,11 +161,11 @@ if __name__ == '__main__':
                             print(f"Turn {t.turn_order} saved to the database with id {t.id}")
 
 
-                        new_set.add_leg(new_leg)
-                        print(new_set)
+                        set.add_leg(new_leg)
+                        print(set)
                         keep_adding_legs = ui.ask_for_confirmation("Do you want to play another leg? (Y/n): ")
 
-                    match.add_set(new_set)
+                    match.add_set(set)
                     keep_adding_sets = ui.ask_for_confirmation("Do you want to play another set? (Y/n): ")
 
                 keep_playing = ui.ask_for_confirmation("Do you want to start another match? (Y/n): ")

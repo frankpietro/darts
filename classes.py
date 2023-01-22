@@ -6,6 +6,24 @@ import user_interface as ui
 import constants as c
 
 
+
+class DatabaseEntity:
+    def __init__(self, id=None):
+        self.id = id
+
+    
+    def insert_string(self):
+        raise NotImplementedError("Method not implemented")
+
+
+    def insert_to_db(self, conn):
+        cursor = conn.cursor()
+        insert_str = self.insert_string()
+        cursor.execute(insert_str)
+        conn.commit
+        self.id = cursor.lastrowid
+
+
 class Match:
     def __init__(self, id=None, team1=None, team2=None, player1=None, player2=None, datetime=dt.datetime.now(), sets=[], first_thrower=None):
         self.id = id
@@ -142,6 +160,10 @@ class Set:
             return self.legs == other.legs
         else:
             return False
+
+
+    def set_id(self, id):
+        self.id = id
 
     
     def add_leg(self, leg):

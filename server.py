@@ -141,6 +141,22 @@ def insert_match(match, conn):
     return cursor.lastrowid
 
 
+def insert_set(set, match_id, conn):
+    cursor = conn.cursor()
+    insert_set_str = "INSERT INTO `" + c.SET_TABLE + "` (`match_id`, `set_order`) VALUES (" + str(match_id) + ", " + str(set.set_order) + ")"
+    cursor.execute(insert_set_str)
+    conn.commit()
+    return cursor.lastrowid
+
+
+def insert_leg(leg, set_id, conn):
+    cursor = conn.cursor()
+    insert_leg_str = "INSERT INTO `" + c.LEG_TABLE + "` (`set_id`, `leg_order`, `goal`) VALUES (" + str(set_id) + ", " + str(leg.leg_order) + ", " + str(leg.goal) + ")"
+    cursor.execute(insert_leg_str)
+    conn.commit()
+    return cursor.lastrowid
+
+
 def insert_match_turn(match_turn, leg_id, conn):
     cursor = conn.cursor()
     insert_match_turn_str = "INSERT INTO `" + c.MATCH_TURN_TABLE + "` (`leg_id`, `player_id`, `turn_order`, `dart1`, `dart2`, `dart3`) VALUES (" + str(leg_id) + ", " + str(match_turn.player.id) + ", " + str(match_turn.turn_order) + ", '" + match_turn.dart1.code + "', '" + match_turn.dart2.code + "', '" + match_turn.dart3.code + "')"
