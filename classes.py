@@ -7,7 +7,7 @@ import constants as c
 
 
 class Match:
-    def __init__(self, id=None, team1=None, team2=None, player1=None, player2=None, datetime=dt.datetime.now(), sets=[]):
+    def __init__(self, id=None, team1=None, team2=None, player1=None, player2=None, datetime=dt.datetime.now(), sets=[], first_thrower=None):
         self.id = id
         self.team1 = team1
         self.team2 = team2
@@ -15,6 +15,21 @@ class Match:
         self.player2 = player2
         self.datetime = datetime
         self.sets = sets
+
+        self.current_thrower = first_thrower
+        
+        if team1 and team2:
+            if not self.current_thrower:
+                self.current_team = None
+            else:
+                if self.current_thrower == self.team1.player1 or self.current_thrower == self.team1.player2:
+                    self.current_team = self.team1
+                elif self.current_thrower == self.team2.player1 or self.current_thrower == self.team2.player2:
+                    self.current_team = self.team2
+                else:
+                    raise ValueError("Invalid current thrower")
+        else:
+            self.current_team = None
 
 
     def __str__(self):
@@ -46,6 +61,10 @@ class Match:
         return self.id == other.id
 
 
+    def set_id(self, id):
+        self.id = id
+
+
     def add_team(self, team, pos):
         if pos == 1:
             self.team1 = team
@@ -66,31 +85,55 @@ class Match:
     
     def add_set(self, set):
         self.sets.append(set)
+
+
+    def next_thrower(self):
+        if self.team1 and self.team2:
+            if not self.current_thrower:
+                self.current_thrower = self.team1.next_player()
+            elif self.current_thrower == self.team1.player1 or self.current_thrower == self.team1.player2:
+                self.current_thrower = self.team2.next_player()
+            elif self.current_thrower == self.team2.player1 or self.current_thrower == self.team2.player2:
+                self.current_thrower = self.team1.next_player()
+            else:
+                raise ValueError("Invalid current thrower")
+
+        elif self.player1 and self.player2:
+            if not self.current_thrower:
+                self.current_thrower = self.player1
+            elif self.current_thrower == self.player1:
+                self.current_thrower = self.player2
+            elif self.current_thrower == self.player2:
+                self.current_thrower = self.player1
+            else:
+                raise ValueError("Invalid current thrower")
+
+        else:
+            raise ValueError("Invalid match configuration")
+        
+        return self.current_thrower
     
     
 class Set:
-    id_iter = itertools.count()
-
-    def __init__(self, id=None, order=None):
+    def __init__(self, id=None, set_order=None, legs=[]):
         self.id = id
-        self.order = order
-        self.legs = []
+        self.set_order = set_order
+        self.legs = legs
 
 
     def __str__(self):
         set_str = ""
 
         if self.id:
-            set_str += f"Set {self.order} with id {self.id}"
+            set_str += f"Set {self.set_order} with id {self.id}"
         else:
-            set_str += f"Set {self.order}"
+            set_str += f"Set {self.set_order}"
 
         for l in self.legs:
             set_str += f"\n{l}"
-        
 
+        return set_str
         
-
 
     def __eq__(self, other):
         if self.id and other.id:
@@ -100,21 +143,64 @@ class Set:
         else:
             return False
 
+    
+    def add_leg(self, leg):
+        self.legs.append(leg)
+
 
 
 class Leg:
-    def __init__(self, id=None, order=None, goal=None, turns=[]):
+    def __init__(self, id=None, leg_order=None, goal=None, turns=[]):
         self.id = id
-        self.order = order
+        self.leg_order = leg_order
         self.goal = goal
         self.turns = turns
 
     
     def __str__(self):
+        leg_str = ""
+
         if self.id:
-            return f"Leg {self.order} with id {self.id}"
+            leg_str += f"Leg {self.leg_order} with id {self.id}"
         else:
-            return f"Leg {self.order}"
+            leg_str += f"Leg {self.leg_order}"
+
+        for t in self.turns:
+            leg_str += f"\n{t}"
+
+        return leg_str
+        
+
+
+    def is_open(self):
+        # sum score of all even turns and of all odd turns
+        # if they are both less than goal, leg is open
+        even_score = 0
+        odd_score = 0
+        for i, t in enumerate(self.turns):
+            if i % 2 == 0:
+                even_score += t.get_score()
+            else:
+                odd_score += t.get_score()
+
+        return even_score < self.goal and odd_score < self.goal
+
+    
+    def current_cap(self):
+        # if odd number of turns, sum all odd turns
+        # if even number of turns, sum all even turns
+        already_scored = 0
+
+        if len(self.turns) % 2 == 0:
+            already_scored += sum(t.get_score() for i, t in enumerate(self.turns) if i % 2 == 0)
+        else:
+            already_scored += sum(t.get_score() for i, t in enumerate(self.turns) if i % 2 != 0)
+
+        return self.goal - already_scored
+
+
+    def add_turn(self, turn):
+        self.turns.append(turn)
     
 
 
@@ -146,10 +232,11 @@ class TrainingSession:
 
 
 class Turn:
-    def __init__(self, dart1=None, dart2=None, dart3=None):
+    def __init__(self, id=None, dart1=None, dart2=None, dart3=None):
         self.dart1 = dart1
         self.dart2 = dart2
         self.dart3 = dart3
+        self.id = id
 
 
     def __str__(self):
@@ -180,14 +267,25 @@ class Turn:
         self.dart3 = None
 
 
+    def remove_dart(self):
+        if self.dart3 is not None:
+            self.dart3 = None
+        elif self.dart2 is not None:
+            self.dart2 = None
+        elif self.dart1 is not None:
+            self.dart1 = None
+        else:
+            print("Error: turn has no darts")
+
+
     def get_score(self):
         score = 0
         if self.dart1 is not None:
-            score += self.dart1.score
+            score += self.dart1.get_score()
         if self.dart2 is not None:
-            score += self.dart2.score
+            score += self.dart2.get_score()
         if self.dart3 is not None:
-            score += self.dart3.score
+            score += self.dart3.get_score()
         return score
 
     
@@ -210,22 +308,61 @@ class Turn:
 
 
 class MatchTurn(Turn):
-    def __init__(self, id=None, order=None, player=None, dart1=None, dart2=None, dart3=None):
-        self.order = order
+    def __init__(self, id=None, turn_order=None, player=None, dart1=None, dart2=None, dart3=None):
+        self.turn_order = turn_order
         self.player = player
-        self.id = id
-        super().__init__(dart1, dart2, dart3)
+        super().__init__(id, dart1, dart2, dart3)
 
 
     def __str__(self):
-        return f"Turn {self.id} - {self.player_id} - {self.dart1.print_value()} {self.dart2.print_value()} {self.dart3.print_value()}"
+        match_turn_str = ""
+
+        if self.id:
+            match_turn_str += f"Turn {self.turn_order} with id {self.id} - {self.player.name} - "
+        else:
+            match_turn_str += f"Turn {self.turn_order} - {self.player.name} - "
+
+        match_turn_str += super().__str__()
+
+        return match_turn_str
+         
+
+    def fill(self, cap=None):
+        correct_turn = False
+        while not correct_turn:
+            self.remove_all_darts()
+            self.add_throws(cap)
+            print(self)
+            correct_turn = ui.ask_for_confirmation("Is this turn correct? (Y/n): ")
+
+        print(f"Turn score: {self.get_score()}")
+        print(f"Remaining cap: {cap - self.get_score()}")
+
+
+    def add_throws(self, cap=None):
+        print("Insert throws (<number><code>, code: a,b,c,d from outer to inner circle)")
+        for i in range(c.N_DARTS):
+            dart_code = ui.ask_for_dart_code()
+            dart = Dart(dart_code)
+            self.add_dart(dart)
+            if cap is not None:
+                dart_score = dart.get_score()
+                if dart_score > cap:
+                    print(f"You exceeded the cap! Cap was {cap} and you scored {dart_score}")
+                    self.remove_dart()
+                    self.add_dart(Dart("0"))
+                    continue
+                if dart_score == cap:
+                    print(f"Game over! You needed exactly {dart_score} to win!")
+                    break
+                cap -= dart_score
+
 
 
 class TrainingTurn(Turn):
     def __init__(self, id=None, aim=None, dart1=None, dart2=None, dart3=None):
-        super().__init__(dart1, dart2, dart3)
+        super().__init__(id, dart1, dart2, dart3)
         self.aim = aim
-        self.id = id
 
 
     def __str__(self):
@@ -254,19 +391,19 @@ class Dart:
         self.code = code
     
 
-    def get_score(self, code):
-        if not code:
+    def get_score(self):
+        if not self.code:
             return 0
 
         # if last character is not a letter, return the number
-        if not code[-1].isalpha():
-            return int(code)
+        if not self.code[-1].isalpha():
+            return int(self.code)
         
-        score = int(code[:-1])
+        score = int(self.code[:-1])
         # if last character is a letter, return the number multiplied by the letter
-        if code[-1] == "a":
+        if self.code[-1] == "a":
             return score * 2
-        elif code[-1] == "c":
+        elif self.code[-1] == "c":
             return score * 3
         else:
             return score
@@ -274,11 +411,12 @@ class Dart:
 
 
 class Team:    
-    def __init__(self, id=None, player1=None, player2=None, name=None):
+    def __init__(self, id=None, player1=None, player2=None, name=None, first_player=None):
         self.id = id
         self.player1 = player1
         self.player2 = player2
         self.name = name
+        self.current_player = first_player
 
 
     def __str__(self):
@@ -300,6 +438,15 @@ class Team:
         return name
 
 
+    def next_player(self):
+        if self.current_player == self.player1:
+            self.current_player = self.player2
+        else:
+            self.current_player = self.player1
+        
+        return self.current_player
+
+
 
 class Player:
     def __init__(self, id=None, name=None):
@@ -309,3 +456,10 @@ class Player:
 
     def __str__(self):
         return f"Player {self.id} - {self.name}"
+
+
+    def __eq__(self, other):
+        if self.id and other.id:
+            return self.id == other.id
+        else:
+            return self.name == other.name

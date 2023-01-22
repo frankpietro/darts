@@ -116,3 +116,16 @@ def ask_for_team_name():
                 return team_name
         else:
             print("Invalid name. Please try again.")
+
+
+def ask_for_leg_goal():
+    while True:
+        try:
+            leg_goal = int(input("Insert leg goal: "))
+            if not u.valid_goal(leg_goal):
+                raise ValueError
+            print(f"Leg goal: {leg_goal}")
+            if ask_for_confirmation():
+                return leg_goal
+        except ValueError:
+            print("Invalid leg goal. Please try again.")

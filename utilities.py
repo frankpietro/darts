@@ -58,3 +58,7 @@ def sect_to_mult(sector):
         return "T"
     else:
         return ""
+
+
+def valid_goal(leg_goal):
+    return leg_goal > 1 and leg_goal % 100 == 1

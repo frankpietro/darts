@@ -26,7 +26,7 @@ def create_tables(cursor):
     # create match table
     cursor.execute("CREATE TABLE IF NOT EXISTS `" + c.MATCH_TABLE + "` (`id` INT NOT NULL AUTO_INCREMENT, `team1_id` INT NULL, `team2_id` INT NULL, `player1_id` INT NULL, `player2_id` INT NULL, `datetime` DATETIME NULL, PRIMARY KEY (`id`))")
     # create set table
-    cursor.execute("CREATE TABLE IF NOT EXISTS `" + c.SET_TABLE + "` (`id` INT NOT NULL AUTO_INCREMENT, `match_id` INT NULL, PRIMARY KEY (`id`))")
+    cursor.execute("CREATE TABLE IF NOT EXISTS `" + c.SET_TABLE + "` (`id` INT NOT NULL AUTO_INCREMENT, `match_id` INT NULL, `set_order` INT NULL, PRIMARY KEY (`id`))")
     # create leg table
     cursor.execute("CREATE TABLE IF NOT EXISTS `" + c.LEG_TABLE + "` (`id` INT NOT NULL AUTO_INCREMENT, `set_id` INT NULL, `leg_order` INT NULL, `goal` INT NULL, PRIMARY KEY (`id`))")
     # create throw table
@@ -122,7 +122,29 @@ def insert_training_turn(training_turn, training_session_id, conn):
 def insert_team(player1_id, player2_id, name, conn):
     cursor = conn.cursor()
     insert_team_str = "INSERT INTO `" + c.TEAM_TABLE + "` (`player1_id`, `player2_id`, `name`) VALUES (" + str(player1_id) + ", " + str(player2_id) + ", '" + name + "')"
+    print(insert_team_str)
     cursor.execute(insert_team_str)
+    conn.commit()
+    return cursor.lastrowid
+
+
+def insert_match(match, conn):
+    cursor = conn.cursor()
+    
+    if match.team1 and match.team2:
+        insert_match_str = "INSERT INTO `" + c.MATCH_TABLE + "` (`team1_id`, `team2_id`, `datetime`) VALUES (" + str(match.team1.id) + ", " + str(match.team2.id) + ", '" + str(match.datetime.strftime(c.SQL_DATETIME_FORMAT)) + "')"
+    else:
+        insert_match_str = "INSERT INTO `" + c.MATCH_TABLE + "` (`player1_id`, `player2_id`, `datetime`) VALUES (" + str(match.player1.id) + ", " + str(match.player2.id) + ", '" + str(match.datetime.strftime(c.SQL_DATETIME_FORMAT)) + "')"
+    
+    cursor.execute(insert_match_str)
+    conn.commit()
+    return cursor.lastrowid
+
+
+def insert_match_turn(match_turn, leg_id, conn):
+    cursor = conn.cursor()
+    insert_match_turn_str = "INSERT INTO `" + c.MATCH_TURN_TABLE + "` (`leg_id`, `player_id`, `turn_order`, `dart1`, `dart2`, `dart3`) VALUES (" + str(leg_id) + ", " + str(match_turn.player.id) + ", " + str(match_turn.turn_order) + ", '" + match_turn.dart1.code + "', '" + match_turn.dart2.code + "', '" + match_turn.dart3.code + "')"
+    cursor.execute(insert_match_turn_str)
     conn.commit()
     return cursor.lastrowid
 
