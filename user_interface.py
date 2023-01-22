@@ -92,3 +92,16 @@ def ask_for_dart_code():
             return dart_code
         else:
             print("Invalid dart. Please try again.")
+
+
+def ask_for_players_per_team():
+    while True:
+        try:
+            players_per_team = int(input("Insert number of players per team: "))
+            if players_per_team < 1 or players_per_team > 2:
+                raise ValueError
+            print(f"Number of players per team: {players_per_team}")
+            if ask_for_confirmation():
+                return players_per_team
+        except ValueError:
+            print("Invalid number. Please try again.")

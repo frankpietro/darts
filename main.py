@@ -1,6 +1,7 @@
 import server as s
 import constants as c
 import user_interface as ui
+import modules as m
 
 from classes import *
 
@@ -45,26 +46,7 @@ if __name__ == '__main__':
             while start_tr_sess:
                 print("Start a training session")
 
-                player_found = False
-                while not player_found:
-                    player_name = ui.ask_for_name()
-
-                    player_id = s.search_player(player_name, conn)
-
-                    if not player_id:
-                        print(f"Player {player_name} not found")
-                        if ui.ask_for_confirmation("Do you want to register him? (Y/n): "):
-                            player_id = s.add_player(player_name, conn)
-                            print(f"Player {player_name} successfully registered with id {player_id}")
-                            player_found = True
-                        else:
-                            print("Registration aborted")
-
-                    else:
-                        print(f"Player {player_name} found with id {player_id}")
-                        player_found = True
-
-                player = Player(player_id, player_name)
+                player = m.get_player(conn)
 
                 training_session = TrainingSession(player=player)
 
@@ -101,7 +83,29 @@ if __name__ == '__main__':
         elif option == c.START_MATCH:
             keep_playing = True
             while keep_playing:
-                
+                print("Start a match")
+
+                match = Match()
+
+                # ask number of players per team
+                n_players_per_team = ui.ask_for_n_players_per_team()
+
+                if n_players_per_team == 1:
+                    player1_name = ui.ask_for_name()
+                    player1_id = s.search_player(player1_name, conn)
+                    if not player1_id:
+                        print(f"Player {player1_name} not found")
+                        if ui.ask_for_confirmation("Do you want to register him? (Y/n): "):
+                            player1_id = s.add_player(player1_name, conn)
+                            print(f"Player {player1_name} successfully registered with id {player1_id}")
+                        else:
+                            print("Registration aborted")
+
+                    else:
+                        print(f"Player {player1_name} found with id {player1_id}")
+                    
+                    player1 = Player(player1_id, player1_name)
+                            
 
 
         elif option == c.SHOW_STATS:
