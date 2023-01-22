@@ -24,17 +24,19 @@ def get_player(conn, unavailable_player=None):
         if not player_id:
             print(f"Player {player_name} not found")
             if ui.ask_for_confirmation("Do you want to register him? (Y/n): "):
-                player_id = s.insert_player(player_name, conn)
-                print(f"Player {player_name} successfully registered with id {player_id}")
+                player = Player(name=player_name)
+                player.insert_to_db(conn)
+                print(f"Player {player_name} successfully registered with id {player.id}")
                 player_found = True
             else:
                 print("Registration aborted")
 
         else:
             print(f"Player {player_name} found with id {player_id}")
+            player = Player(id=player_id, name=player_name)
             player_found = True
     
-    return Player(player_id, player_name)
+    return player
 
 
 def get_team(conn, unavailable_team=None):
@@ -60,7 +62,7 @@ def get_team(conn, unavailable_team=None):
             if player1.id == player2.id:
                 print("You cannot play with yourself")
                 continue
-            
+
             p2_available = True
 
         team_id, team_name = s.search_team(player1.id, player2.id, conn)

@@ -20,13 +20,14 @@ class DatabaseEntity:
         cursor = conn.cursor()
         insert_str = self.insert_string()
         cursor.execute(insert_str)
-        conn.commit
+        conn.commit()
         self.id = cursor.lastrowid
 
 
-class Match:
+
+class Match(DatabaseEntity):
     def __init__(self, id=None, team1=None, team2=None, player1=None, player2=None, datetime=dt.datetime.now(), sets=[], first_thrower=None):
-        self.id = id
+        super().__init__(id)
         self.team1 = team1
         self.team2 = team2
         self.player1 = player1
@@ -77,6 +78,18 @@ class Match:
 
     def __eq__(self, other):
         return self.id == other.id
+
+    # --------------------- DB queries ---------------------
+
+    def insert_string(self):
+        if self.team1 and self.team2:
+            insert_str = "INSERT INTO `" + c.MATCH_TABLE + "` (`team1_id`, `team2_id`, `datetime`) VALUES (" + str(self.team1.id) + ", " + str(self.team2.id) + ", '" + str(self.datetime.strftime(c.SQL_DATETIME_FORMAT)) + "')"
+        else:
+            insert_str = "INSERT INTO `" + c.MATCH_TABLE + "` (`player1_id`, `player2_id`, `datetime`) VALUES (" + str(self.player1.id) + ", " + str(self.player2.id) + ", '" + str(self.datetime.strftime(c.SQL_DATETIME_FORMAT)) + "')"
+        
+        return insert_str
+
+    # --------------------- end DB queries ---------------------
 
 
     def set_id(self, id):
@@ -131,11 +144,13 @@ class Match:
         
         return self.current_thrower
     
+
     
-class Set:
-    def __init__(self, id=None, set_order=None, legs=[]):
-        self.id = id
+class Set(DatabaseEntity):
+    def __init__(self, id=None, match_id=None, set_order=None, legs=[]):
+        super().__init__(id)
         self.set_order = set_order
+        self.match_id = match_id
         self.legs = legs
 
 
@@ -161,6 +176,14 @@ class Set:
         else:
             return False
 
+    # --------------------- DB queries ---------------------
+
+    def insert_string(self):
+        insert_str = "INSERT INTO `" + c.SET_TABLE + "` (`match_id`, `set_order`) VALUES (" + str(self.match_id) + ", " + str(self.set_order) + ")"
+        return insert_str
+
+    # --------------------- end DB queries ---------------------
+
 
     def set_id(self, id):
         self.id = id
@@ -171,9 +194,10 @@ class Set:
 
 
 
-class Leg:
-    def __init__(self, id=None, leg_order=None, goal=None, turns=[]):
-        self.id = id
+class Leg(DatabaseEntity):
+    def __init__(self, id=None, set_id=None, leg_order=None, goal=None, turns=[]):
+        super().__init__(id)
+        self.set_id = set_id
         self.leg_order = leg_order
         self.goal = goal
         self.turns = turns
@@ -191,6 +215,14 @@ class Leg:
             leg_str += f"\n{t}"
 
         return leg_str
+
+    # --------------------- DB queries ---------------------
+
+    def insert_string(self):
+        insert_str = "INSERT INTO `" + c.LEG_TABLE + "` (`set_id`, `leg_order`, `goal`) VALUES (" + str(self.set_id) + ", " + str(self.leg_order) + ", " + str(self.goal) + ")"
+        return insert_str
+
+    # --------------------- end DB queries ---------------------
         
 
 
@@ -226,11 +258,11 @@ class Leg:
     
 
 
-class TrainingSession:
-    def __init__(self, id=None, player=None, datetime=dt.datetime.now(), turns=[]):
-        self.id = id
-        self.player = player
+class TrainingSession(DatabaseEntity):
+    def __init__(self, id=None, datetime=dt.datetime.now(), player=None, turns=[]):
+        super().__init__(id)
         self.datetime = datetime
+        self.player = player
         self.turns = turns
 
     
@@ -247,18 +279,26 @@ class TrainingSession:
 
         return ret_str
 
+    # --------------------- DB queries ---------------------
+
+    def insert_string(self):
+        insert_str = "INSERT INTO `" + c.TRAINING_SESSION_TABLE + "` (`datetime`, `player_id`) VALUES ('" + str(self.datetime.strftime(c.SQL_DATETIME_FORMAT)) + "', " + str(self.player.id) + ")"
+        return insert_str
+
+    # --------------------- end DB queries ---------------------
+
 
     def add_turn(self, turn):
         self.turns.append(turn)
 
 
 
-class Turn:
+class Turn(DatabaseEntity):
     def __init__(self, id=None, dart1=None, dart2=None, dart3=None):
+        super().__init__(id)
         self.dart1 = dart1
         self.dart2 = dart2
         self.dart3 = dart3
-        self.id = id
 
 
     def __str__(self):
@@ -271,6 +311,13 @@ class Turn:
             ret_str += " " + str(self.dart3)
         return ret_str
 
+
+    # --------------------- DB queries ---------------------
+
+    def insert_string(self):
+        raise NotImplementedError("Turns are not stored in the database by themselves")
+
+    # --------------------- end DB queries ---------------------
 
     def add_dart(self, dart):
         if self.dart1 is None:
@@ -330,10 +377,11 @@ class Turn:
 
 
 class MatchTurn(Turn):
-    def __init__(self, id=None, turn_order=None, player=None, dart1=None, dart2=None, dart3=None):
+    def __init__(self, id=None, leg_id=None, turn_order=None, player=None, dart1=None, dart2=None, dart3=None):
+        super().__init__(id, dart1, dart2, dart3)
+        self.leg_id = leg_id
         self.turn_order = turn_order
         self.player = player
-        super().__init__(id, dart1, dart2, dart3)
 
 
     def __str__(self):
@@ -347,7 +395,14 @@ class MatchTurn(Turn):
         match_turn_str += super().__str__()
 
         return match_turn_str
-         
+
+    # --------------------- DB queries ---------------------
+
+    def insert_string(self):
+        insert_str = "INSERT INTO `" + c.MATCH_TURN_TABLE + "` (`leg_id`, `player_id`, `turn_order`, `dart1`, `dart2`, `dart3`) VALUES (" + str(self.leg_id) + ", " + str(self.player.id) + ", " + str(self.turn_order) + ", '" + self.dart1.code + "', '" + self.dart2.code + "', '" + self.dart3.code + "')"
+        return insert_str
+
+    # --------------------- end DB queries ---------------------
 
     def fill(self, cap=None):
         correct_turn = False
@@ -382,13 +437,95 @@ class MatchTurn(Turn):
 
 
 class TrainingTurn(Turn):
-    def __init__(self, id=None, aim=None, dart1=None, dart2=None, dart3=None):
+    def __init__(self, id=None, dart1=None, dart2=None, dart3=None, aim=None, training_session_id=None):
         super().__init__(id, dart1, dart2, dart3)
         self.aim = aim
+        self.training_session_id = training_session_id
 
 
     def __str__(self):
         return f"{self.dart1} {self.dart2} {self.dart3} aiming at {self.aim}"
+
+
+    # --------------------- DB queries ---------------------
+
+    def insert_string(self):
+        insert_str = f"INSERT INTO `{c.TRAINING_TURN_TABLE}` (`training_session_id`, `aim`, `dart1`, `dart2`, `dart3`) VALUES ({self.training_session_id}, '{self.aim}', '{self.dart1.code}', '{self.dart2.code}', '{self.dart3.code}')"
+        return insert_str
+
+
+
+class Team(DatabaseEntity):    
+    def __init__(self, id=None, player1=None, player2=None, name=None, first_player=None):
+        super().__init__(id)
+        self.player1 = player1
+        self.player2 = player2
+        self.name = name
+        self.current_player = first_player
+
+
+    def __str__(self):
+        return f"Team {self.id} - {self.team_name()}"
+
+    # --------------------- DB queries ---------------------
+
+    def insert_string(self):
+        insert_str = f"INSERT INTO `{c.TEAM_TABLE}` (`player1_id`, `player2_id`, `name`) VALUES ({self.player1.id}, {self.player2.id}, '{self.name}')"
+        return insert_str
+    
+    # --------------------- end DB queries ---------------------
+
+    def add_player(self, player):
+        if self.player1 is None:
+            self.player1 = player
+        elif self.player2 is None:
+            self.player2 = player
+        else:
+            print("Error: team already has 2 players")
+
+
+    def default_name(self):
+        # name: first letter of all player names, capitalized
+        name = self.player1.name[0].upper() + self.player2.name[0].upper()
+        return name
+
+
+    def next_player(self):
+        if self.current_player == self.player1:
+            self.current_player = self.player2
+        else:
+            self.current_player = self.player1
+        
+        return self.current_player
+
+
+
+class Player(DatabaseEntity):
+    def __init__(self, id=None, name=None):
+        super().__init__(id)
+        self.name = name
+    
+
+    def __str__(self):
+        return f"Player {self.id} - {self.name}"
+
+
+    def __eq__(self, other):
+        if self.id and other.id:
+            return self.id == other.id
+        else:
+            return self.name == other.name
+
+    # --------------------- DB queries ---------------------
+
+    def insert_string(self):
+        insert_str = f"INSERT INTO `{c.PLAYER_TABLE}` (`name`) VALUES ('{self.name}')"
+        return insert_str
+
+    # --------------------- end DB queries ---------------------
+
+    def change_name(self, new_name):
+        self.name = new_name
 
 
 
@@ -429,59 +566,3 @@ class Dart:
             return score * 3
         else:
             return score
-
-
-
-class Team:    
-    def __init__(self, id=None, player1=None, player2=None, name=None, first_player=None):
-        self.id = id
-        self.player1 = player1
-        self.player2 = player2
-        self.name = name
-        self.current_player = first_player
-
-
-    def __str__(self):
-        return f"Team {self.id} - {self.team_name()}"
-
-
-    def add_player(self, player):
-        if self.player1 is None:
-            self.player1 = player
-        elif self.player2 is None:
-            self.player2 = player
-        else:
-            print("Error: team already has 2 players")
-
-
-    def default_name(self):
-        # name: first letter of all player names, capitalized
-        name = self.player1.name[0].upper() + self.player2.name[0].upper()
-        return name
-
-
-    def next_player(self):
-        if self.current_player == self.player1:
-            self.current_player = self.player2
-        else:
-            self.current_player = self.player1
-        
-        return self.current_player
-
-
-
-class Player:
-    def __init__(self, id=None, name=None):
-        self.id = id
-        self.name = name
-    
-
-    def __str__(self):
-        return f"Player {self.id} - {self.name}"
-
-
-    def __eq__(self, other):
-        if self.id and other.id:
-            return self.id == other.id
-        else:
-            return self.name == other.name
