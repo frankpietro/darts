@@ -190,16 +190,20 @@ class Turn:
             score += self.dart3.score
         return score
 
+    
+    def add_throws(self):
+        print("Insert throws (<number><code>, code: a,b,c,d from outer to inner circle)")
+        for i in range(c.N_DARTS):
+            dart_code = ui.ask_for_dart_code()
+            dart = Dart(dart_code)
+            self.add_dart(dart)
+
 
     def fill(self):
         correct_turn = False
         while not correct_turn:
-            print("Insert throws (<number><code>, code: a,b,c,d from outer to inner circle)")
-            for i in range(c.N_DARTS):
-                dart_code = ui.ask_for_dart_code()
-                dart = Dart(dart_code)
-                self.add_dart(dart)
-            
+            self.remove_all_darts()
+            self.add_throws()            
             print(self)
             correct_turn = ui.ask_for_confirmation("Is this turn correct? (Y/n): ")
 

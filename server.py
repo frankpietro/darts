@@ -18,8 +18,8 @@ def create_server_connection(host_name='localhost', user_name='root', user_passw
 
 def create_darts_db(cursor):
     # create database
-    cursor.execute("CREATE DATABASE IF NOT EXISTS " + c.DATABASE)
-    cursor.execute("USE " + c.DATABASE)
+    cursor.execute("CREATE DATABASE IF NOT EXISTS " + c.TEST_DATABASE)
+    cursor.execute("USE " + c.TEST_DATABASE)
 
 
 def create_tables(cursor):
@@ -88,7 +88,7 @@ def search_team(player1_id, player2_id, conn):
     if len(result) == 1:
         return result[0][0], result[0][3]
 
-    return None
+    return None, None
 
 # ------------------------------ END SELECT ------------------------------
 
@@ -119,9 +119,9 @@ def insert_training_turn(training_turn, training_session_id, conn):
     return cursor.lastrowid
 
 
-def insert_team(player1_id, player2_id, conn):
+def insert_team(player1_id, player2_id, name, conn):
     cursor = conn.cursor()
-    insert_team_str = "INSERT INTO `" + c.TEAM_TABLE + "` (`player1_id`, `player2_id`) VALUES (" + str(player1_id) + ", " + str(player2_id) + ")"
+    insert_team_str = "INSERT INTO `" + c.TEAM_TABLE + "` (`player1_id`, `player2_id`, `name`) VALUES (" + str(player1_id) + ", " + str(player2_id) + ", '" + name + "')"
     cursor.execute(insert_team_str)
     conn.commit()
     return cursor.lastrowid

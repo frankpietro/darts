@@ -56,9 +56,7 @@ if __name__ == '__main__':
                     
                     keep_throwing = True
                     while keep_throwing:
-                        print(f"Aim: {aim}")
-
-                        turn = TrainingTurn(aim)
+                        turn = TrainingTurn(aim=aim)
                         
                         turn.fill()
 
@@ -84,10 +82,12 @@ if __name__ == '__main__':
                 n_players_per_team = ui.ask_for_players_per_team()
 
                 if n_players_per_team == 1:
+                    print("Player 1")
                     player1 = m.get_player(conn)
                     match.add_player(player1, 1)
 
-                    player2 = m.get_player(conn)
+                    print("Player 2")
+                    player2 = m.get_player(conn, unavailable_player=player1)
                     match.add_player(player2, 2)
 
                 elif n_players_per_team == 2:

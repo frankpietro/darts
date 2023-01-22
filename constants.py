@@ -1,4 +1,5 @@
 # database constants
+TEST_DATABASE = 'test_darts'
 DATABASE = 'darts'
 MATCH_TABLE = 'match'
 SET_TABLE = 'set'
