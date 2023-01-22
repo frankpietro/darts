@@ -106,3 +106,13 @@ def ask_for_players_per_team():
         except ValueError:
             print("Invalid number. Please try again.")
 
+
+def ask_for_team_name():
+    while True:
+        team_name = input("Insert team name: ")
+        if team_name:
+            print(f"Team name: {team_name}")
+            if ask_for_confirmation():
+                return team_name
+        else:
+            print("Invalid name. Please try again.")

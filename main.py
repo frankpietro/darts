@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
                         turn = TrainingTurn(aim)
                         
-                        turn = m.get_turn(turn)
+                        turn.fill()
 
                         training_session.add_turn(turn)
 
@@ -81,14 +81,24 @@ if __name__ == '__main__':
                 match = Match()
 
                 # ask number of players per team
-                n_players_per_team = ui.ask_for_n_players_per_team()
+                n_players_per_team = ui.ask_for_players_per_team()
 
                 if n_players_per_team == 1:
                     player1 = m.get_player(conn)
-                    player2 = m.get_player(conn)
+                    match.add_player(player1, 1)
 
-                    match.
-                            
+                    player2 = m.get_player(conn)
+                    match.add_player(player2, 2)
+
+                elif n_players_per_team == 2:
+                    team1 = m.get_team(conn)
+                    match.add_team(team1, 1)
+
+                    team2 = m.get_team(conn)
+                    match.add_team(team2, 2)
+
+
+                keep_playing = ui.ask_for_confirmation("Do you want to start another match? (Y/n): ")
 
 
         elif option == c.SHOW_STATS:

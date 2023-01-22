@@ -34,7 +34,7 @@ def create_tables(cursor):
     # create player table
     cursor.execute("CREATE TABLE IF NOT EXISTS `" + c.PLAYER_TABLE + "` (`id` INT NOT NULL AUTO_INCREMENT, `name` VARCHAR(255) NULL, PRIMARY KEY (`id`))")
     # create team table
-    cursor.execute("CREATE TABLE IF NOT EXISTS `" + c.TEAM_TABLE + "` (`id` INT NOT NULL AUTO_INCREMENT, `player1_id` INT NULL, `player2_id` INT NULL, PRIMARY KEY (`id`))")
+    cursor.execute("CREATE TABLE IF NOT EXISTS `" + c.TEAM_TABLE + "` (`id` INT NOT NULL AUTO_INCREMENT, `player1_id` INT NULL, `player2_id` INT NULL, `name` VARCHAR(255) NULL, PRIMARY KEY (`id`))")
     # create training session table
     cursor.execute("CREATE TABLE IF NOT EXISTS `" + c.TRAINING_SESSION_TABLE + "` (`id` INT NOT NULL AUTO_INCREMENT, `datetime` DATETIME NULL, `player_id` INT NULL, PRIMARY KEY (`id`))")
     # create training turn table
@@ -78,6 +78,18 @@ def search_player(name, conn):
 
     return None
 
+
+def search_team(player1_id, player2_id, conn):
+    cursor = conn.cursor()
+    search_team_str = "SELECT * FROM `" + c.TEAM_TABLE + "` WHERE `player1_id` = " + str(player1_id) + " AND `player2_id` = " + str(player2_id) + " OR `player1_id` = " + str(player2_id) + " AND `player2_id` = " + str(player1_id)
+    cursor.execute(search_team_str)
+    result = cursor.fetchall()
+
+    if len(result) == 1:
+        return result[0][0], result[0][3]
+
+    return None
+
 # ------------------------------ END SELECT ------------------------------
 
 
@@ -85,24 +97,32 @@ def search_player(name, conn):
 
 def insert_player(name, conn):
     cursor = conn.cursor()
-    add_player_str = "INSERT INTO `" + c.PLAYER_TABLE + "` (`name`) VALUES ('" + name + "')"
-    cursor.execute(add_player_str)
+    insert_player_str = "INSERT INTO `" + c.PLAYER_TABLE + "` (`name`) VALUES ('" + name + "')"
+    cursor.execute(insert_player_str)
     conn.commit()
     return cursor.lastrowid
 
 
 def insert_training_session(training_session, conn):
     cursor = conn.cursor()
-    add_training_session_str = "INSERT INTO `" + c.TRAINING_SESSION_TABLE + "` (`datetime`, `player_id`) VALUES ('" + str(training_session.datetime.strftime(c.SQL_DATETIME_FORMAT)) + "', " + str(training_session.player.id) + ")"
-    cursor.execute(add_training_session_str)
+    insert_training_session_str = "INSERT INTO `" + c.TRAINING_SESSION_TABLE + "` (`datetime`, `player_id`) VALUES ('" + str(training_session.datetime.strftime(c.SQL_DATETIME_FORMAT)) + "', " + str(training_session.player.id) + ")"
+    cursor.execute(insert_training_session_str)
     conn.commit()
     return cursor.lastrowid
 
 
 def insert_training_turn(training_turn, training_session_id, conn):
     cursor = conn.cursor()
-    add_training_turn_str = f"INSERT INTO `{c.TRAINING_TURN_TABLE}` (`training_session_id`, `aim`, `dart1`, `dart2`, `dart3`) VALUES ({training_session_id}, '{training_turn.aim}', '{training_turn.dart1.code}', '{training_turn.dart2.code}', '{training_turn.dart3.code}')"
-    cursor.execute(add_training_turn_str)
+    insert_training_turn_str = f"INSERT INTO `{c.TRAINING_TURN_TABLE}` (`training_session_id`, `aim`, `dart1`, `dart2`, `dart3`) VALUES ({training_session_id}, '{training_turn.aim}', '{training_turn.dart1.code}', '{training_turn.dart2.code}', '{training_turn.dart3.code}')"
+    cursor.execute(insert_training_turn_str)
+    conn.commit()
+    return cursor.lastrowid
+
+
+def insert_team(player1_id, player2_id, conn):
+    cursor = conn.cursor()
+    insert_team_str = "INSERT INTO `" + c.TEAM_TABLE + "` (`player1_id`, `player2_id`) VALUES (" + str(player1_id) + ", " + str(player2_id) + ")"
+    cursor.execute(insert_team_str)
     conn.commit()
     return cursor.lastrowid
 

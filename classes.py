@@ -2,6 +2,8 @@ import itertools
 import datetime as dt
 
 import utilities as u
+import user_interface as ui
+import constants as c
 
 
 class Match:
@@ -189,6 +191,19 @@ class Turn:
         return score
 
 
+    def fill(self):
+        correct_turn = False
+        while not correct_turn:
+            print("Insert throws (<number><code>, code: a,b,c,d from outer to inner circle)")
+            for i in range(c.N_DARTS):
+                dart_code = ui.ask_for_dart_code()
+                dart = Dart(dart_code)
+                self.add_dart(dart)
+            
+            print(self)
+            correct_turn = ui.ask_for_confirmation("Is this turn correct? (Y/n): ")
+
+
 
 class MatchTurn(Turn):
     def __init__(self, id=None, order=None, player=None, dart1=None, dart2=None, dart3=None):
@@ -254,12 +269,12 @@ class Dart:
 
 
 
-class Team:
-    id_iter = itertools.count()
-    
-    def __init__(self, name):
-        self.id = next(self.id_iter)
-        self.players = []
+class Team:    
+    def __init__(self, id=None, player1=None, player2=None, name=None):
+        self.id = id
+        self.player1 = player1
+        self.player2 = player2
+        self.name = name
 
 
     def __str__(self):
@@ -267,18 +282,17 @@ class Team:
 
 
     def add_player(self, player):
-        self.players.append(player)
+        if self.player1 is None:
+            self.player1 = player
+        elif self.player2 is None:
+            self.player2 = player
+        else:
+            print("Error: team already has 2 players")
 
 
-    def team_name(self):
-        if len(self.players) == 0:
-            return "-"
-
+    def default_name(self):
         # name: first letter of all player names, capitalized
-        name = ""
-        for player in self.players:
-            name += player.name[0].upper()
-
+        name = self.player1.name[0].upper() + self.player2.name[0].upper()
         return name
 
 
