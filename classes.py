@@ -5,10 +5,12 @@ import utilities as u
 
 
 class Match:
-    def __init__(self, id=None, team1=None, team2=None, datetime=dt.datetime.now(), sets=[]):
+    def __init__(self, id=None, team1=None, team2=None, player1=None, player2=None, datetime=dt.datetime.now(), sets=[]):
         self.id = id
         self.team1 = team1
         self.team2 = team2
+        self.player1 = player1
+        self.player2 = player2
         self.datetime = datetime
         self.sets = sets
 
@@ -17,9 +19,23 @@ class Match:
         # timestamp_str: dd-mm-yyyy hh:mm
         timestamp_str = self.datetime.strftime("%d-%m-%Y %H:%M")
 
-        match_str = f"Match {self.id} - {timestamp_str}\n"
-        match_str += f"Team 1: {self.team1}\n"
-        match_str += f"Team 2: {self.team2}\n"
+        match_str = ""
+        if self.id:
+            match_str = f"Match {self.id} - {timestamp_str}\n"
+        else:
+            match_str = f"Match - {timestamp_str}\n"
+
+        if self.team1:
+            match_str += f"Team 1: {self.team1}\n"
+        if self.team2:
+            match_str += f"Team 2: {self.team2}\n"
+        if self.player1:
+            match_str += f"Player 1: {self.player1}\n"
+        if self.player2:
+            match_str += f"Player 2: {self.player2}\n"
+
+        for s in self.sets:
+            match_str += f"{s}\n"
 
         return match_str
 
@@ -28,25 +44,50 @@ class Match:
         return self.id == other.id
 
 
-    def add_team(self, team):
-        self.teams.append(team)
+    def add_team(self, team, pos):
+        if pos == 1:
+            self.team1 = team
+        elif pos == 2:
+            self.team2 = team
+        else:
+            raise ValueError("Invalid team position")
+    
+    
+    def add_player(self, player, pos):
+        if pos == 1:
+            self.player1 = player
+        elif pos == 2:
+            self.player2 = player
+        else:
+            raise ValueError("Invalid player position")
 
     
-
+    def add_set(self, set):
+        self.sets.append(set)
+    
+    
 class Set:
     id_iter = itertools.count()
 
-    def __init__(self, id, order):
+    def __init__(self, id=None, order=None):
         self.id = id
         self.order = order
         self.legs = []
 
 
     def __str__(self):
+        set_str = ""
+
         if self.id:
-            return f"Set {self.order} with id {self.id}"
+            set_str += f"Set {self.order} with id {self.id}"
         else:
-            return f"Set {self.order}"
+            set_str += f"Set {self.order}"
+
+        for l in self.legs:
+            set_str += f"\n{l}"
+        
+
+        
 
 
     def __eq__(self, other):
@@ -60,9 +101,10 @@ class Set:
 
 
 class Leg:
-    def __init__(self, id=None, order=None, turns=[]):
+    def __init__(self, id=None, order=None, goal=None, turns=[]):
         self.id = id
         self.order = order
+        self.goal = goal
         self.turns = turns
 
     
