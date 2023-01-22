@@ -1,0 +1,5 @@
+*.txt
+*.ipynb
+secret_pw.py
+__pycache__/
+.ipynb_checkpoints/
