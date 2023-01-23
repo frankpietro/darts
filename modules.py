@@ -66,13 +66,15 @@ def get_team(conn, unavailable_team=None):
             p2_available = True
 
         team_id, team_name = s.search_team(player1.id, player2.id, conn)
+        team = Team(id=team_id, player1=player1, player2=player2, name=team_name)
 
         if not team_id:
             print(f"Team {player1.name} - {player2.name} not found")
             if ui.ask_for_confirmation("Do you want to register it? (Y/n): "):
                 team_name = ui.ask_for_team_name()
-                team_id = s.insert_team(player1.id, player2.id, team_name, conn)
-                print(f"Team {player1.name} - {player2.name} successfully registered with id {team_id} and name {team_name}")
+                team = Team(player1=player1, player2=player2, name=team_name)
+                team.insert_to_db(conn)
+                print(f"Team {player1.name} - {player2.name} successfully registered with id {team.id} and name {team_name}")
                 team_found = True
             else:
                 print("Registration aborted")
@@ -81,4 +83,4 @@ def get_team(conn, unavailable_team=None):
             print(f"Team {player1.name} - {player2.name} found with id {team_id} and name {team_name}")
             team_found = True
 
-    return Team(id=team_id, player1=player1, player2=player2, name=team_name)
+    return team

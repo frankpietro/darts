@@ -34,22 +34,8 @@ class Match(DatabaseEntity):
         self.player2 = player2
         self.datetime = datetime
         self.sets = sets
-
         self.current_thrower = first_thrower
         
-        if team1 and team2:
-            if not self.current_thrower:
-                self.current_team = None
-            else:
-                if self.current_thrower == self.team1.player1 or self.current_thrower == self.team1.player2:
-                    self.current_team = self.team1
-                elif self.current_thrower == self.team2.player1 or self.current_thrower == self.team2.player2:
-                    self.current_team = self.team2
-                else:
-                    raise ValueError("Invalid current thrower")
-        else:
-            self.current_team = None
-
 
     def __str__(self):
         # timestamp_str: dd-mm-yyyy hh:mm
@@ -142,6 +128,19 @@ class Match(DatabaseEntity):
         else:
             raise ValueError("Invalid match configuration")
         
+        if self.team1 and self.team2:
+            if not self.current_thrower:
+                self.current_team = None
+            else:
+                if self.current_thrower == self.team1.player1 or self.current_thrower == self.team1.player2:
+                    self.current_team = self.team1
+                elif self.current_thrower == self.team2.player1 or self.current_thrower == self.team2.player2:
+                    self.current_team = self.team2
+                else:
+                    raise ValueError("Invalid current thrower")
+        else:
+            self.current_team = None
+
         return self.current_thrower
     
 
@@ -399,22 +398,10 @@ class MatchTurn(Turn):
     # --------------------- DB queries ---------------------
 
     def insert_string(self):
-        insert_str = "INSERT INTO `" + c.MATCH_TURN_TABLE + "` (`leg_id`, `player_id`, `turn_order`, `dart1`, `dart2`, `dart3`) VALUES (" + str(self.leg_id) + ", " + str(self.player.id) + ", " + str(self.turn_order) + ", '" + self.dart1.code + "', '" + self.dart2.code + "', '" + self.dart3.code + "')"
+        insert_str = "INSERT INTO `" + c.MATCH_TURN_TABLE + "` (`leg_id`, `player_id`, `turn_order`, `dart1`, `dart2`, `dart3`) VALUES (" + str(self.leg_id) + ", " + str(self.player.id) + ", " + str(self.turn_order) + ", '" + str(self.dart1) + "', '" + str(self.dart2) + "', '" + str(self.dart3) + "')"
         return insert_str
 
     # --------------------- end DB queries ---------------------
-
-    def fill(self, cap=None):
-        correct_turn = False
-        while not correct_turn:
-            self.remove_all_darts()
-            self.add_throws(cap)
-            print(self)
-            correct_turn = ui.ask_for_confirmation("Is this turn correct? (Y/n): ")
-
-        print(f"Turn score: {self.get_score()}")
-        print(f"Remaining cap: {cap - self.get_score()}")
-
 
     def add_throws(self, cap=None):
         print("Insert throws (<number><code>, code: a,b,c,d from outer to inner circle)")
@@ -431,8 +418,23 @@ class MatchTurn(Turn):
                     continue
                 if dart_score == cap:
                     print(f"Game over! You needed exactly {dart_score} to win!")
+                    # add empty darts to fill the turn
+                    for j in range(i+1, c.N_DARTS):
+                        self.add_dart(Dart())
                     break
                 cap -= dart_score
+
+
+    def fill(self, cap=None):
+        correct_turn = False
+        while not correct_turn:
+            self.remove_all_darts()
+            self.add_throws(cap)
+            print(self)
+            correct_turn = ui.ask_for_confirmation("Is this turn correct? (Y/n): ")
+
+        print(f"Turn score: {self.get_score()}")
+        print(f"Remaining cap: {cap - self.get_score()}")
 
 
 
@@ -465,7 +467,7 @@ class Team(DatabaseEntity):
 
 
     def __str__(self):
-        return f"Team {self.id} - {self.team_name()}"
+        return f"Team {self.id} - {self.name}"
 
     # --------------------- DB queries ---------------------
 
@@ -491,10 +493,10 @@ class Team(DatabaseEntity):
 
 
     def next_player(self):
-        if self.current_player == self.player1:
-            self.current_player = self.player2
-        else:
+        if not self.current_player or self.current_player == self.player2:
             self.current_player = self.player1
+        else:
+            self.current_player = self.player2
         
         return self.current_player
 
@@ -530,12 +532,15 @@ class Player(DatabaseEntity):
 
 
 class Dart:
-    def __init__(self, code):
+    def __init__(self, code=None):
         self.code = code
 
 
     def __str__(self):
-        return self.code
+        if self.code:
+            return self.code
+        else:
+            return "-"
 
 
     def print_value(self):

@@ -82,7 +82,7 @@ if __name__ == '__main__':
             while keep_playing:
                 print("Start a match")
 
-                match = Match()
+                match = Match(sets=[])
 
                 # ask number of players per team
                 n_players_per_team = ui.ask_for_players_per_team()
@@ -118,7 +118,7 @@ if __name__ == '__main__':
                 set_order = 0
                 while keep_adding_sets:
                     set_order += 1
-                    set = Set(match_id=match.id, set_order=set_order)
+                    set = Set(match_id=match.id, set_order=set_order, legs=[])
 
                     set.insert_to_db(conn)
                     match.add_set(set)
@@ -132,7 +132,7 @@ if __name__ == '__main__':
                         goal = ui.ask_for_leg_goal()
                         print()
 
-                        leg = Leg(set_id=set.id, leg_order=leg_order, goal=goal)
+                        leg = Leg(set_id=set.id, leg_order=leg_order, goal=goal, turns=[])
                         
                         leg.insert_to_db(conn)
                         set.add_leg(leg)
@@ -155,7 +155,7 @@ if __name__ == '__main__':
                         print(f"Leg {leg_order} closed by {match.current_thrower.name}")
 
                         if n_players_per_team == 2:
-                            print(f"Team {match.current_team()} wins leg {leg_order}")
+                            print(f"{match.current_team} wins leg {leg_order}")
 
                         print(set)
                         keep_adding_legs = ui.ask_for_confirmation("Do you want to play another leg? (Y/n): ")
