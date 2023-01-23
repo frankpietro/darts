@@ -38,6 +38,8 @@ def valid_mult(mult):
 
 # validation of dart code
 def valid_dart_code(code):
+    if code == "":
+        return False
     if not code[-1].isalpha():
         if code not in ["0", "25", "50"]:
             return False

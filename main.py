@@ -155,6 +155,7 @@ if __name__ == '__main__':
 
                             turn.insert_to_db(conn)                            
                             leg.add_turn(turn)
+                            print()
                         
                         print(f"Leg {leg_order} closed by {match.current_thrower.name}")
 

@@ -317,7 +317,7 @@ class TrainingSession(DatabaseEntity):
             hits[aim] += t.get_hits()
             zeros[aim] += t.get_zeros()
             close_shots[aim] += t.get_close_shots(aim)
-            score_distr[aim][t.get_score()//c.SCORE_GROUP_SIZE] += 1
+            score_distr[aim][t.get_score()//c.SCORE_GROUPS] += 1
         
         # for each aim, print statistics
         for aim in total_shots:
@@ -552,7 +552,6 @@ class TrainingTurn(Turn):
         return hits
 
 
-    
 
 class Team(DatabaseEntity):    
     def __init__(self, id=None, player1=None, player2=None, name=None, first_player=None):
