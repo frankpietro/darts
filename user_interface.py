@@ -58,13 +58,18 @@ def ask_for_name():
             print("Invalid name. Please try again.")
 
 
-def ask_for_moltiplicator():
+def ask_for_mult():
     while True:
-        moltiplicator = input("Insert d for double, t for triple or press enter for standard aim: ")
-        if u.valid_moltiplicator(moltiplicator):
-                return moltiplicator.upper()
+        mult = input("Insert d for double, t for triple or press enter for standard aim: ")
+        if u.valid_mult(mult):
+            if mult == "d":
+                return "a"
+            elif mult == "t":
+                return "c"
+            else:
+                return ""
         else:
-            print("Invalid moltiplicator. Please try again.")
+            print("Invalid multiplier. Please try again.")
 
 
 def ask_for_aim():
@@ -72,11 +77,10 @@ def ask_for_aim():
         aim = input("Where are you aiming at? ('b' for bull) ")
         if u.valid_aim(aim):
             if aim != "b":
-                moltiplicator = ask_for_moltiplicator()
-                if moltiplicator != "S":
-                    aim = f"{moltiplicator.upper()}{aim}"
+                mult = ask_for_mult()
+                aim = f"{aim}{mult}"
             else:
-                aim = "bull"
+                aim = c.BULL
 
             print(f"Aim: {aim}")
             if ask_for_confirmation():

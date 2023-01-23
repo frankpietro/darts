@@ -26,13 +26,13 @@ def open_file(filename):
 # validation of aim
 def valid_aim(aim):
     # aim must be either between 1 and 20, 25 or 50
-    return aim in c.BOARD_INPUTS
+    return aim in c.BOARD_SEGMENTS
 
 
-# validation of moltiplicator
-def valid_moltiplicator(moltiplicator):
-    # moltiplicator must be either s, d or t
-    if moltiplicator.upper() in c.MOLTIPLICATORS or moltiplicator == "":
+# validation of multiplier
+def valid_mult(mult):
+    # multiplier must be either d or t
+    if mult.upper() in c.MULTIPLIERS or mult == "":
         return True
 
 
@@ -44,7 +44,7 @@ def valid_dart_code(code):
     else:
         if code[-1] not in ["a", "b", "c", "d", "A", "B", "C", "D"]:
             return False
-        if code[:-1] not in c.BOARD_INPUTS or code[:-1] in ["0", "25", "50"]:
+        if code[:-1] not in c.BOARD_SEGMENTS or code[:-1] in ["0", "25", "50"]:
             return False
     
     return True
@@ -62,3 +62,14 @@ def sect_to_mult(sector):
 
 def valid_goal(leg_goal):
     return leg_goal > 1 and leg_goal % 100 == 1
+
+
+def perc(n):
+    return f"{round(n * 100, 2)}%"
+
+
+def is_neighbor(dart_segment, aim_segment):
+    # return true if in c.ORDERED_SEGMENTS they are consecutive
+    dart_index = c.ORDERED_SEGMENTS.index(dart_segment)
+    aim_index = c.ORDERED_SEGMENTS.index(aim_segment)
+    return dart_index == (aim_index + 1)%len(c.ORDERED_SEGMENTS) or dart_index == (aim_index - 1)%len(c.ORDERED_SEGMENTS)

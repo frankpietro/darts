@@ -72,6 +72,10 @@ if __name__ == '__main__':
                         keep_throwing = ui.ask_for_confirmation("Do you want to throw again with same aim? (Y/n): ")
 
                     keep_aiming = ui.ask_for_confirmation("Do you want to change aim? (Y/n): ")
+
+                print(f"Training session {training_session.id} finished")
+
+                training_session.print_statistics()
                 
                 start_tr_sess = ui.ask_for_confirmation("Do you want to start another training session? (Y/n): ")
 

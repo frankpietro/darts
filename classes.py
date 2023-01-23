@@ -1,5 +1,5 @@
-import itertools
 import datetime as dt
+import numpy as np
 
 import utilities as u
 import user_interface as ui
@@ -290,6 +290,51 @@ class TrainingSession(DatabaseEntity):
     def add_turn(self, turn):
         self.turns.append(turn)
 
+    
+    def print_statistics(self):
+        total_shots = {}
+        total_scores = {}
+        hits = {}
+        zeros = {}
+        close_shots = {}
+        score_distr = {}
+        
+
+        for t in self.turns:
+            print(t)
+            aim = t.get_aim()
+            # create an entry in each dict with aim as key if it does not exist
+            if aim not in total_shots:
+                total_shots[aim] = 0
+                total_scores[aim] = 0
+                hits[aim] = 0
+                zeros[aim] = 0
+                close_shots[aim] = 0
+                score_distr[aim] = np.zeros(c.SCORE_GROUPS)
+
+            total_shots[aim] += t.get_shots()
+            total_scores[aim] += t.get_score()
+            hits[aim] += t.get_hits()
+            zeros[aim] += t.get_zeros()
+            close_shots[aim] += t.get_close_shots(aim)
+            score_distr[aim][t.get_score()//c.SCORE_GROUP_SIZE] += 1
+        
+        # for each aim, print statistics
+        for aim in total_shots:
+            print(f"While aiming at {aim}:")
+            print(f"- total shots: {total_shots[aim]}")
+            print(f"- total hits: {hits[aim]}")
+            
+            print(f"- total zeros: {zeros[aim]}")
+            print(f"- average score: {round(total_scores[aim] / len(self.turns), 2)}")
+            print(f"- hit percentage: {u.perc(hits[aim] / total_shots[aim])}")
+            print(f"- zero percentage: {u.perc(zeros[aim] / total_shots[aim])}")
+            print(f"- close shot percentage: {u.perc(close_shots[aim] / total_shots[aim])}")
+            print("")
+            print("Score distribution:")
+            for i, score in enumerate(score_distr[aim]):
+                print(f"{i*c.SCORE_GROUP_SIZE}-{(i+1)*c.SCORE_GROUP_SIZE - 1}: {score}")
+
 
 
 class Turn(DatabaseEntity):
@@ -374,6 +419,29 @@ class Turn(DatabaseEntity):
             correct_turn = ui.ask_for_confirmation("Is this turn correct? (Y/n): ")
 
 
+    def get_zeros(self):
+        zeros = 0
+        for d in [self.dart1, self.dart2, self.dart3]:
+            if d is not None and d.get_score() == 0:
+                zeros += 1
+        return zeros
+
+
+    def get_shots(self):
+        shots = 0
+        for d in [self.dart1, self.dart2, self.dart3]:
+            if d.get_code() is not None:
+                shots += 1
+        return shots
+
+
+    def get_close_shots(self, aim):
+        close_shots = 0
+        for d in [self.dart1, self.dart2, self.dart3]:
+            if d is not None and d.is_close(aim):
+                close_shots += 1
+        return close_shots
+
 
 class MatchTurn(Turn):
     def __init__(self, id=None, leg_id=None, turn_order=None, player=None, dart1=None, dart2=None, dart3=None):
@@ -448,14 +516,43 @@ class TrainingTurn(Turn):
     def __str__(self):
         return f"{self.dart1} {self.dart2} {self.dart3} aiming at {self.aim}"
 
-
     # --------------------- DB queries ---------------------
 
     def insert_string(self):
-        insert_str = f"INSERT INTO `{c.TRAINING_TURN_TABLE}` (`training_session_id`, `aim`, `dart1`, `dart2`, `dart3`) VALUES ({self.training_session_id}, '{self.aim}', '{self.dart1.code}', '{self.dart2.code}', '{self.dart3.code}')"
+        insert_str = f"INSERT INTO `{c.TRAINING_TURN_TABLE}` (`training_session_id`, `aim`, `dart1`, `dart2`, `dart3`) VALUES ({self.training_session_id}, '{self.aim}', '{self.dart1}', '{self.dart2}', '{self.dart3}')"
         return insert_str
 
+    # --------------------- end DB queries ---------------------
 
+    def get_aim(self):
+        return self.aim
+
+    
+    def get_hits(self):
+        hits = 0
+        for dart in [self.dart1, self.dart2, self.dart3]:
+            # if aim is bull, hits are all darts that are in BULL_VALUES
+            if self.aim == c.BULL:
+                # no other ways of scoring 25 or 50
+                if dart.get_score() in c.BULL_VALUES:
+                    hits += 1
+            # if aim is double or triple, only those are hits
+            elif self.aim[-1] in c.SECTORS:
+                if dart.get_code() == self.aim:
+                    hits += 1
+            
+            # if aim is a number, hits are all darts that are in the same segment
+            else:
+                code = dart.get_code()
+                if code[-1] in c.SECTORS:
+                    code = code[:-1]
+                if code == self.aim:
+                    hits += 1
+
+        return hits
+
+
+    
 
 class Team(DatabaseEntity):    
     def __init__(self, id=None, player1=None, player2=None, name=None, first_player=None):
@@ -553,6 +650,10 @@ class Dart:
 
     def set_code(self, code):
         self.code = code
+
+    
+    def get_code(self):
+        return self.code
     
 
     def get_score(self):
@@ -571,3 +672,59 @@ class Dart:
             return score * 3
         else:
             return score
+
+
+    def get_sector(self):
+        if not self.code:
+            return None
+
+        if self.code[-1].isalpha():
+            return self.code[-1]
+        else:
+            return None
+
+
+    def get_segment(self):
+        if not self.code:
+            return None
+
+        if self.code[-1].isalpha():
+            return self.code[:-1]
+        else:
+            return self.code
+
+
+    def is_close(self, aim):
+        # if aim is bull, any shot with sector d is close
+        if aim == c.BULL:
+            if self.get_sector() == "d":
+                return True
+            else:
+                return False
+
+        # if aim is double, only doubles of close segments and sector b of same segment are close
+        elif aim[-1] == "a":
+            if self.get_sector() == "a" and u.is_neighbor(self.get_segment(), aim[:-1]):
+                return True
+            elif self.get_sector() == "b" and self.get_segment() == aim[:-1]:
+                return True
+            else:
+                return False
+
+        # if aim is triple, only triples of close segments and sector b and d of same segment are close
+        elif aim[-1] == "c":
+            if self.get_sector() == "c" and u.is_neighbor(self.get_segment(), aim[:-1]):
+                return True
+            elif self.get_sector() in ["b", "d"] and self.get_segment() == aim[:-1]:
+                return True
+            else:
+                return False
+
+        # if aim is a number, any shot in a close segment is close
+        else:
+            if u.is_neighbor(self.get_segment(), aim):
+                return True
+            else:
+                return False
+
+        
